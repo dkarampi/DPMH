@@ -12,36 +12,26 @@ struct listelement {
 	long int padding[NUMPAD];
 } __attribute__ ((aligned (CACHE_LINE)));
 
-void destroy_list(struct listelement *head)
-{
-	for (struct listelement *p = head; p!= NULL;) {
-		p = p->next;
-		free(head);
-		head = p;
-	}
-}
-
 void traverse_list(struct listelement *head)
 {
 	for (struct listelement *p = head; p != NULL; p = p->next)
-
-	return;
+		;
 }
 
-
-// For testing
+#ifdef DEBUG
 void print_list(struct listelement *head)
 {
-	for (struct listelement *p = head; p != NULL; p = p->next)
+	int i = 0;
+	for (struct listelement *p = head; p != NULL; p = p->next, ++i)
 		printf("%ld ", p->padding[0]);
-	printf("\n");
-
-	return;
+	printf("(%d nodes)\n", i);
 }
+#endif
 
 struct listelement * create_list_fwd_pointers(int num_of_nodes)
 {
-	struct listelement *head = malloc(num_of_nodes * sizeof(struct listelement));
+	struct listelement *head = 
+		malloc(num_of_nodes * sizeof(struct listelement));
 
 	struct listelement *p = head;
 	for (int i = 0; i < num_of_nodes-1; i++, p++) {
@@ -58,79 +48,65 @@ struct listelement * create_list_fwd_pointers(int num_of_nodes)
 	return head;
 }
 
+/*
+ * We adapt Knuth's shuffling algorithm, yet there might be a couple of
+ * weeknesses: 1) head is always the element at the first position of the array
+ * and 2) I'm not sure if we handle the corner cases (see if statement within
+ * loop) correctly. Nevertheless, for a large number of nodes the following
+ * function should be sufficient.
+ */
 struct listelement * create_list_rnd_pointers(int num_of_nodes)
 {
 	struct listelement *list_array = create_list_fwd_pointers(num_of_nodes);
 
-	/* Knuth's Shuffle */
 	for (int i = num_of_nodes-1; i > 1; i--) {
-		int j = rand() % (i-1);		// if i = 2 then j = 0
-		// We cannot swap with j becuase loops are created.
-		// Instead, we will swap with j->next.
+		int j = rand() % i;
 
+		/* 
+		 * We cannot swap with i with j itself becuase we need a pointer to the
+		 * previous element of j for that. Instead, we will swap with j->next.
+		 */
 		struct listelement *p = list_array[j].next;
-		if (p == NULL) continue;
-		list_array[j].next = p->next;	// we essentially remove node p
+		if (p == NULL || p == &list_array[i]) continue;
+		list_array[j].next = p->next;
 		struct listelement *q = list_array[i].next;
 		list_array[i].next = p;
 		p->next = q;
 	}
 	
-	// head will continue be the same pointing to the first element of the array
-	// Preferable we should switch it with another node
-
 	return &list_array[0];
 }
 
 int main(void)
 {
-	printf("Size of node: %zu\n", sizeof(struct listelement));
+	/* TODO: provide basic unit tests and configure options */
+	/* TODO: implement reverse linked list */
+
 	struct timeval start, end;
 
-	// 64 bytes per node
-	// MB: 1024 * 1024
-	// struct listelement * head = create_list_fwd_pointers(1024 * 8); // 512 KB
-	struct listelement * head = create_list_fwd_pointers(1024 * 16 * 32); // 1024 * 16 = 1MB
-	struct listelement * p = head;
-
-	// Testing
-	struct listelement *test = create_list_rnd_pointers(7);
-	print_list(test);
-	return 0;
-
-	// warm up the caches
-	traverse_list(p);
-	// run experiment
+	struct listelement * head = create_list_fwd_pointers(10 * 1024 * 1024 / 64);
+	/* Warm up the caches */
+	traverse_list(head);
+	/* Run experiment */
 	gettimeofday(&start, NULL);
-	for (int i = 0; i < RUNS; i++) {
-		p = head;
-		traverse_list(p);
-	}
+	for (int i = 0; i < RUNS; i++)
+		traverse_list(head);
 	gettimeofday(&end, NULL);
-
 	printf("%ld μs\n", ((end.tv_sec * 1000000 + end.tv_usec)
 			- (start.tv_sec * 1000000 + start.tv_usec)));
+	free(head);
 
-
-	return 0;
-	// Random pointers
-	head = create_list_rnd_pointers(1024 * 16 * 32); // 1024 * 16 = 1MB
-	p = head;
-	// warm up the caches
-	traverse_list(p);
-	// run experiment
+	head = create_list_rnd_pointers(10 * 1024 * 1024 / 64);
+	/* Warm up the caches */
+	traverse_list(head);
+	/* Run experiment */
 	gettimeofday(&start, NULL);
-	for (int i = 0; i < RUNS; i++) {
-		p = head;
-		traverse_list(p);
-	}
+	for (int i = 0; i < RUNS; i++)
+		traverse_list(head);
 	gettimeofday(&end, NULL);
-
 	printf("%ld μs\n", ((end.tv_sec * 1000000 + end.tv_usec)
 			- (start.tv_sec * 1000000 + start.tv_usec)));
-
-
-	// TODO: free memory
+	free(head);
 
 	return 0;
 }

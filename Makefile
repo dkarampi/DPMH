@@ -1,13 +1,20 @@
-CC = gcc
-CFLAGS = -c -Wall -pedantic -std=c99 -g
-SOURCES = assignment01.c
-OBJECTS = $(SOURCES:.c=.o)
-EXECUTABLE = prog
+CC			= gcc
+CFLAGS		= -Wall -Wextra -pedantic -std=c99
+DEBUGFLAGS	= -g -O0 -DDEBUG
+RELEASEFLAGS= -O3
 
-all: $(SOURCES) $(EXECUTABLE)
+SOURCES		= assignment01.c
+OBJECTS		= $(SOURCES:.c=.o)
+TARGET		= prog
 
-$(EXECUTABLE): $(OBJECTS) 
-	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
+all: $(TARGET)
 
-.c.o:
-	$(CC) $(CFLAGS) $< -o $@
+$(TARGET): $(OBJECTS) 
+	$(CC) $(DEBUGFLAGS) $(OBJECTS) -o $@
+
+%.o: %.c
+	$(CC) $(CFLAGS) $(DEBUGFLAGS) -c $< -o $@
+
+clean:
+	-rm -f *.o
+	-rm -f $(TARGET)
