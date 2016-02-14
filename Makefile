@@ -1,24 +1,13 @@
-TARGET = prog
-LIBS =
 CC = gcc
-CFLAGS = -Wall -pedantic -std=c99
+CFLAGS = -c -Wall -pedantic -std=c99 -g
+SOURCES = assignment01.c
+OBJECTS = $(SOURCES:.c=.o)
+EXECUTABLE = prog
 
-.PHONY: default all clean
+all: $(SOURCES) $(EXECUTABLE)
 
-default: $(TARGET)
-all: default
+$(EXECUTABLE): $(OBJECTS) 
+	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
 
-OBJECTS = $(patsubst %.c, %.o, $(wildcard *.c))
-HEADERS = $(wildcard *.h)
-
-%.o: %.c $(HEADERS)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-.PRECIOUS: $(TARGET) $(OBJECTS)
-
-$(TARGET): $(OBJECTS)
-	$(CC) $(OBJECTS) -Wall $(LIBS) -o $@
-
-clean:
-	-rm -f *.o
-	-rm -f $(TARGET)
+.c.o:
+	$(CC) $(CFLAGS) $< -o $@

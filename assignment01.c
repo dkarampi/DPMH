@@ -7,29 +7,29 @@
 #define NUMPAD	7
 #define CACHE_LINE	64
 
-
 struct listelement {
 	struct listelement *next;
 	long int padding[NUMPAD];
 } __attribute__ ((aligned (CACHE_LINE)));
 
-
 void destroy_list(struct listelement *head)
 {
-	// TODO:
+	for (struct listelement *p = head; p!= NULL;) {
+		p = p->next;
+		free(head);
+		head = p;
+	}
 }
-
 
 void traverse_list(struct listelement *head)
 {
-	while (head != NULL)
-		head = head->next;
+	for (struct listelement *p = head; p != NULL; p = p->next)
 
 	return;
 }
 
 
-// for testing
+// For testing
 void print_list(struct listelement *head)
 {
 	for (struct listelement *p = head; p != NULL; p = p->next)
@@ -39,44 +39,48 @@ void print_list(struct listelement *head)
 	return;
 }
 
-
 struct listelement * create_list_fwd_pointers(int num_of_nodes)
 {
 	struct listelement *head = malloc(num_of_nodes * sizeof(struct listelement));
 
 	struct listelement *p = head;
 	for (int i = 0; i < num_of_nodes-1; i++, p++) {
-		p->padding[0] = (long int) i; // use for debugging
+#ifdef DEBUG
+		p->padding[0] = (long int) i;
+#endif
 		p->next = (p+1);
 	}
-	p->padding[0] = (long int) num_of_nodes-1; // testing
+#ifdef DEBUG
+	p->padding[0] = (long int) num_of_nodes-1;
+#endif
 	p->next = NULL;
 
 	return head;
 }
 
-
 struct listelement * create_list_rnd_pointers(int num_of_nodes)
 {
-	struct listelement *list_array = create_list_rnd_pointers(num_of_nodes);
+	struct listelement *list_array = create_list_fwd_pointers(num_of_nodes);
 
 	/* Knuth's Shuffle */
-	for (int i = num_of_nodes-1; i > 0; i--) {
-		int j = rand() % i;
+	for (int i = num_of_nodes-1; i > 1; i--) {
+		int j = rand() % (i-1);		// if i = 2 then j = 0
+		// We cannot swap with j becuase loops are created.
+		// Instead, we will swap with j->next.
 
-		
 		struct listelement *p = list_array[j].next;
-		// can p be NULL ?
+		if (p == NULL) continue;
 		list_array[j].next = p->next;	// we essentially remove node p
-		struct listelement *q = listelement[i].next;
-		listelement[i].next = p;
+		struct listelement *q = list_array[i].next;
+		list_array[i].next = p;
 		p->next = q;
 	}
+	
+	// head will continue be the same pointing to the first element of the array
+	// Preferable we should switch it with another node
 
-
-	return head;
+	return &list_array[0];
 }
-
 
 int main(void)
 {
